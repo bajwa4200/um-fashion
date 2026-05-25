@@ -1,0 +1,10 @@
+UM Fashion — 3D stylist on your GPU laptop
+============================================
+
+1. Open CLIENT-SETUP-GUIDE.md (full step-by-step, no coding knowledge needed)
+2. First time only: right-click setup.ps1 → Run with PowerShell
+3. Every day: double-click run.ps1 and leave the window open
+4. Questions? Send a screenshot of any error to your developer
+
+Website demo (shops/cart) works without this folder.
+This folder is only for 3D photo twin + AI stylist.

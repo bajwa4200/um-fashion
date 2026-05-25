@@ -1,0 +1,244 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  VENDOR
+  SUPERADMIN
+}
+
+enum VendorStatus {
+  PENDING
+  APPROVED
+  SUSPENDED
+  REJECTED
+}
+
+enum ProductCategory {
+  CLOTHING
+  ACCESSORIES
+  FRAGRANCES
+  MAKEUP
+  FOOTWEAR
+}
+
+enum OutfitStep {
+  PANTS
+  SHIRT
+  JACKET
+  FOOTWEAR
+  HAT
+  ACCESSORIES
+  WATCHES
+  FRAGRANCE
+}
+
+enum OrderStatus {
+  PLACED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  STRIPE
+  COD
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  name          String?
+  role          Role      @default(USER)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  vendor        Vendor?
+  cart          Cart?
+  orders        Order[]
+  avatar        Avatar?
+  outfitSessions OutfitSession[]
+  reviews       Review[]
+}
+
+model Vendor {
+  id               String       @id @default(cuid())
+  userId           String       @unique
+  businessName     String
+  slug             String?      @unique
+  description      String?
+  tagline          String?
+  logoUrl          String?
+  bannerUrl        String?
+  city             String?
+  rating           Float        @default(4.5)
+  status           VendorStatus @default(PENDING)
+  stripeAccountId  String?
+  stripeOnboarded  Boolean      @default(false)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  products         Product[]
+  orderItems       OrderItem[]
+
+  @@index([slug])
+}
+
+model Product {
+  id          String          @id @default(cuid())
+  vendorId    String
+  name        String
+  description String?
+  category    ProductCategory
+  vendorPrice Decimal         @db.Decimal(10, 2)
+  stock       Int             @default(0)
+  sizes       String[]        @default([])
+  colors      String[]        @default([])
+  images         String[]        @default([])
+  tryOnImageUrl  String?
+  scenarioTags   String[]        @default([])
+  genderTarget   String?
+  season         String?
+  outfitStep     OutfitStep?
+  isActive       Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  vendor      Vendor          @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
+  reviews     Review[]
+
+  @@index([category])
+  @@index([vendorId])
+}
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  cartId    String
+  productId String
+  quantity  Int      @default(1)
+  size      String?
+  color     String?
+  createdAt DateTime @default(now())
+
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, productId, size, color])
+}
+
+model Order {
+  id              String        @id @default(cuid())
+  userId          String
+  status          OrderStatus   @default(PLACED)
+  paymentMethod   PaymentMethod
+  paymentStatus   PaymentStatus @default(PENDING)
+  stripePaymentId String?
+  totalAmount     Decimal       @db.Decimal(10, 2)
+  platformFee     Decimal       @db.Decimal(10, 2)
+  shippingAddress String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  user            User          @relation(fields: [userId], references: [id])
+  items           OrderItem[]
+}
+
+model OrderItem {
+  id           String   @id @default(cuid())
+  orderId      String
+  productId    String
+  vendorId     String
+  quantity     Int
+  size         String?
+  color        String?
+  vendorPrice  Decimal  @db.Decimal(10, 2)
+  displayPrice Decimal  @db.Decimal(10, 2)
+  platformFee  Decimal  @db.Decimal(10, 2)
+
+  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product      Product  @relation(fields: [productId], references: [id])
+  vendor       Vendor   @relation(fields: [vendorId], references: [id])
+}
+
+model Avatar {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  gender         String   @default("neutral")
+  rigData        Json
+  baseImageUrl   String?
+  faceImageUrl   String?
+  modelGlbUrl    String?
+  modelThumbnail String?
+  smplParams     Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model OutfitSession {
+  id              String   @id @default(cuid())
+  userId          String
+  occasion        String?
+  location        String?
+  weatherData     Json?
+  chatHistory     Json     @default("[]")
+  completedSteps  String[] @default([])
+  selectedItems   Json     @default("[]")
+  currentStep     String?
+  isComplete      Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+}
+
+model PlatformSettings {
+  id             String   @id @default("default")
+  commissionRate Decimal  @default(0.15) @db.Decimal(5, 4)
+  siteName       String   @default("UM Fashion")
+  updatedAt      DateTime @updatedAt
+}

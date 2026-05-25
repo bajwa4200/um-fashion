@@ -1,0 +1,28 @@
+{
+  "name": "um-fashion-marketplace",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "db:generate": "npx prisma generate --schema=packages/database/prisma/schema.prisma",
+    "db:push": "npx prisma db push --schema=packages/database/prisma/schema.prisma",
+    "db:seed": "npm run seed --workspace=@um/database",
+    "db:seed:full": "npm run db:push && npm run db:seed",
+    "db:fix-images": "npm run fix-images --workspace=@um/database",
+    "db:refresh-images": "npm run refresh-images --workspace=@um/database",
+    "db:studio": "npx prisma studio --schema=packages/database/prisma/schema.prisma"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "npm@10.9.3"
+}
