@@ -1,5 +1,8 @@
-import { auth } from "@/lib/auth";
+import { authConfig } from "@/lib/auth.config";
+import NextAuth from "next-auth";
 import { NextResponse } from "next/server";
+
+const { auth } = NextAuth(authConfig);
 
 const publicRoutes = ["/", "/login", "/register", "/shop"];
 const authRoutes = ["/login", "/register"];
@@ -12,9 +15,12 @@ export default auth((req) => {
   const isPublic =
     publicRoutes.some((r) => nextUrl.pathname === r) ||
     nextUrl.pathname.startsWith("/shop") ||
+    nextUrl.pathname.startsWith("/shops") ||
     nextUrl.pathname.startsWith("/product") ||
+    nextUrl.pathname.startsWith("/gpu-setup") ||
     nextUrl.pathname.startsWith("/api/stripe/webhook") ||
-    nextUrl.pathname.startsWith("/api/auth");
+    nextUrl.pathname.startsWith("/api/auth") ||
+    nextUrl.pathname.startsWith("/api/health");
 
   const isAuthRoute = authRoutes.includes(nextUrl.pathname);
 
